@@ -5,9 +5,3 @@ Built the game of Set [(wiki)](<https://en.wikipedia.org/wiki/Set_(card_game)>) 
 ## Preview
 
 <img src="./samples/game.png" alt="drawing" width="400"/>
-
-## TODO
-
-- implement computer player
-- "computer grabs set!" overlay
-- "tie game!" overlay

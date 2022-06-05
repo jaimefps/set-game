@@ -55,7 +55,6 @@ export class GameState extends VanillaState {
       player: this.player,
       playerPoints: this.playerPoints,
       computerPoints: this.computerPoints,
-      computer: this.computer,
       board: this.board,
       isOver: this.isOver,
       refreshCount: this.refreshCount,
@@ -152,5 +151,23 @@ export class GameState extends VanillaState {
         this.player = []
       }
     }
+  }
+
+  @rerender
+  computerGrabSet() {
+    const indexes = this.findSet(this.board)
+    if (!indexes) {
+      return
+    }
+
+    const compSet = indexes.map((n) => this.board[n])
+    this.player = this.player.filter((c) => !compSet?.includes(c))
+    this.computerPoints += 1
+
+    this.board = this.board
+      .map((c) => (compSet.includes(c) ? this.deck.pop() : c))
+      .filter(Boolean) as CardName[]
+
+    this.reviewBoard()
   }
 }

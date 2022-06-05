@@ -3,22 +3,14 @@ import camelCase from "lodash/camelCase"
 import { CardName, GameState } from "./GameState"
 import { ImageMap, ImageMapKey } from "./ImageMap"
 import { useVanillaState } from "use-vanilla-state"
+import { useComputer } from "./hooks"
 import {
   OverLaySet,
   OverLayNope,
   OverlayRefresh,
-  OverlayGameOver
+  OverlayGameOver,
+  OverLayComputerSet
 } from "./Overlay"
-
-/*
-  
-TODO:
-
-  - "Tie Game!" PNG
-  - "computer grabs set!"m PNG
-  - implement computer player
-
-*/
 
 const Card: React.FC<{ game: GameState; name: CardName }> = ({
   game,
@@ -52,6 +44,7 @@ const Board: React.FC<{ game: GameState }> = ({ game }) => {
       <OverLayNope game={game} />
       <OverlayRefresh game={game} />
       <OverlayGameOver game={game} />
+      <OverLayComputerSet game={game} />
       {game.state.board.map((c) => {
         return <Card key={c} name={c} game={game} />
       })}
@@ -82,13 +75,16 @@ const Counters: React.FC<{ game: GameState }> = ({ game }) => {
 const DevMode: React.FC<{ game: GameState }> = ({ game }) => {
   const [group, setGroup] = useState<any[] | null>(null)
   const { playerPoints, computerPoints } = game.state
+
   useEffect(() => {
     if (playerPoints > 0 || computerPoints > 0) {
       setGroup(null)
     }
   }, [playerPoints, computerPoints, setGroup])
+
   return (
     <div style={{ display: "flex", gap: 10 }}>
+      <button onClick={() => game.computerGrabSet()}>computer</button>
       <button onClick={() => game.refresh()}>refresh</button>
       <button
         onClick={() => {
@@ -105,6 +101,8 @@ const DevMode: React.FC<{ game: GameState }> = ({ game }) => {
 
 const App: React.FC = () => {
   const game = useVanillaState(GameState)
+  useComputer(game)
+
   return (
     <div className="app">
       <Counters game={game} />

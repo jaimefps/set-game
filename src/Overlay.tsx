@@ -97,7 +97,7 @@ export const OverlayRefresh: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
-    speed: 200
+    speed: 175
   })
 
   const currRefresh = game.state.refreshCount
@@ -111,7 +111,17 @@ export const OverlayRefresh: React.FC<{ game: GameState }> = ({ game }) => {
 
   return (
     <Overlay zIndex={3}>
-      <img alt="reload" src={reloadSrc} style={{ opacity: count / 10 }} />
+      <div
+        style={{
+          padding: 10,
+          border: "4px solid purple",
+          backgroundColor: "plum",
+          borderRadius: 20,
+          opacity: count / 10
+        }}
+      >
+        <img alt="reload" src={reloadSrc} style={{ opacity: count / 10 }} />
+      </div>
     </Overlay>
   )
 }
@@ -125,10 +135,33 @@ export const OverlayGameOver: React.FC<{ game: GameState }> = ({ game }) => {
   const playerWins = game.state.playerPoints > game.state.computerPoints
   const alt = tieGame ? "tie-game" : playerWins ? "you-win" : "you-lose"
   const src = tieGame ? tieSrc : playerWins ? youWinSrc : youLoseSrc
+  const style = tieGame
+    ? {
+        borderColor: "darkblue",
+        backgroundColor: "lightblue"
+      }
+    : playerWins
+    ? {
+        borderColor: "darkgreen",
+        backgroundColor: "lightgreen"
+      }
+    : {
+        borderColor: "darkred",
+        backgroundColor: "pink"
+      }
 
   return (
     <Overlay zIndex={4}>
-      <img src={src} alt={alt} />
+      <div
+        style={{
+          padding: 10,
+          border: "4px solid",
+          borderRadius: 20,
+          ...style
+        }}
+      >
+        <img src={src} alt={alt} />
+      </div>
     </Overlay>
   )
 }

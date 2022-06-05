@@ -32,7 +32,6 @@ export class GameState extends VanillaState {
   private player: CardName[] = []
   private playerPoints = 0
   private computerPoints = 0
-  private computer: CardName[] = []
   private board: CardName[] = []
   private isOver = false
   private refreshCount = 0

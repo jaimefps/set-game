@@ -105,6 +105,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
+      <div>computer will take a set every 20 seconds!</div>
       <Counters game={game} />
       <Board game={game} />
       {/* <DevMode game={game} /> */}

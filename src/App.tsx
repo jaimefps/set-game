@@ -12,6 +12,47 @@ import {
   OverLayComputerSet
 } from "./Overlay"
 
+const DIFFICULTY_MAP = {
+  easy: 30,
+  medium: 20,
+  hard: 15
+} as const
+
+type Difficulty = keyof typeof DIFFICULTY_MAP
+
+type GameConfig = {
+  ready: boolean
+  difficulty: Difficulty
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const DevCTools: React.FC<{ game: GameState }> = ({ game }) => {
+  const [group, setGroup] = useState<any[] | null>(null)
+  const { playerPoints, computerPoints } = game.state
+
+  useEffect(() => {
+    if (playerPoints > 0 || computerPoints > 0) {
+      setGroup(null)
+    }
+  }, [playerPoints, computerPoints, setGroup])
+
+  return (
+    <div style={{ display: "flex", gap: 10 }}>
+      <button onClick={() => game.computerGrabSet()}>computer</button>
+      <button onClick={() => game.refresh()}>refresh</button>
+      <button
+        onClick={() => {
+          const group = game.findSet(game.state.board)?.map((x) => x + 1)
+          setGroup(group ?? null)
+        }}
+      >
+        find
+      </button>
+      <div>{JSON.stringify(group)}</div>
+    </div>
+  )
+}
+
 const Card: React.FC<{ game: GameState; name: CardName }> = ({
   game,
   name
@@ -71,44 +112,90 @@ const Counters: React.FC<{ game: GameState }> = ({ game }) => {
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DevMode: React.FC<{ game: GameState }> = ({ game }) => {
-  const [group, setGroup] = useState<any[] | null>(null)
-  const { playerPoints, computerPoints } = game.state
-
-  useEffect(() => {
-    if (playerPoints > 0 || computerPoints > 0) {
-      setGroup(null)
-    }
-  }, [playerPoints, computerPoints, setGroup])
-
+const Settings: React.FC<{
+  config: GameConfig
+  onChange: (c: GameConfig) => void
+}> = ({ config, onChange }) => {
   return (
-    <div style={{ display: "flex", gap: 10 }}>
-      <button onClick={() => game.computerGrabSet()}>computer</button>
-      <button onClick={() => game.refresh()}>refresh</button>
-      <button
-        onClick={() => {
-          const group = game.findSet(game.state.board)?.map((x) => x + 1)
-          setGroup(group ?? null)
-        }}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 15
+      }}
+    >
+      <div style={{ fontWeight: "bold" }}>Game Settings</div>
+      <select
+        value={config.difficulty}
+        onChange={(e) =>
+          onChange({
+            ...config,
+            difficulty: e.target.value as Difficulty
+          })
+        }
       >
-        find
+        <option value="easy">Easy (30 secs)</option>
+        <option value="medium">Medium (20 secs)</option>
+        <option value="hard">Hard (15 secs)</option>
+      </select>
+      <button
+        style={{ padding: "0px 25px" }}
+        onClick={() =>
+          onChange({
+            ...config,
+            ready: true
+          })
+        }
+      >
+        start
       </button>
-      <div>{JSON.stringify(group)}</div>
     </div>
   )
 }
 
-const App: React.FC = () => {
+const Game: React.FC<{
+  config: GameConfig
+  onChangeConfig: (c: GameConfig) => void
+}> = ({ config: { difficulty }, onChangeConfig }) => {
   const game = useVanillaState(GameState)
-  useComputer(game)
+  const wait = DIFFICULTY_MAP[difficulty]
+  const { count } = useComputer(game, wait)
+
+  return (
+    <>
+      <div>computer will find a set in {count} seconds!</div>
+      <Counters game={game} />
+      <Board game={game} />
+      <button
+        style={{ padding: "0px 15px" }}
+        onClick={() =>
+          onChangeConfig({
+            ready: false,
+            difficulty
+          })
+        }
+      >
+        restart
+      </button>
+      {/* <DevCTools game={game} /> */}
+    </>
+  )
+}
+
+const App: React.FC = () => {
+  const [config, setConfig] = useState<GameConfig>({
+    ready: false,
+    difficulty: "easy"
+  })
 
   return (
     <div className="app">
-      <div>computer will take a set every 20 seconds!</div>
-      <Counters game={game} />
-      <Board game={game} />
-      {/* <DevMode game={game} /> */}
+      {config.ready ? (
+        <Game config={config} onChangeConfig={setConfig} />
+      ) : (
+        <Settings config={config} onChange={setConfig} />
+      )}
     </div>
   )
 }

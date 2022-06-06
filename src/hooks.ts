@@ -13,6 +13,7 @@ export const useCountdown = ({
   if (from <= to) {
     throw new Error('useCountdown: "to" must be less than "from"')
   }
+
   const [count, setCount] = useState(to)
   const restart = useCallback(() => setCount(from), [from])
 
@@ -31,10 +32,10 @@ export const useCountdown = ({
   }
 }
 
-export const useComputer = (game: GameState) => {
+export const useComputer = (game: GameState, wait: number) => {
   const { count, restart } = useCountdown({
     to: 0,
-    from: 20,
+    from: wait,
     speed: 1000
   })
 
@@ -52,6 +53,10 @@ export const useComputer = (game: GameState) => {
       restart()
     }
   }, [count, done, restart, game])
+
+  return {
+    count
+  }
 }
 
 export function usePrevious<V = any>(value: V): V | undefined {

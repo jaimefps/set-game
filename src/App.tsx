@@ -26,9 +26,9 @@ type GameConfig = {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DevCTools: React.FC<{ game: GameState }> = ({ game }) => {
+const DevTools: React.FC<{ game: GameState }> = ({ game }) => {
   const [group, setGroup] = useState<any[] | null>(null)
-  const { playerPoints, computerPoints } = game.state
+  const { playerPoints, computerPoints, board } = game.state
 
   useEffect(() => {
     if (playerPoints > 0 || computerPoints > 0) {
@@ -42,7 +42,7 @@ const DevCTools: React.FC<{ game: GameState }> = ({ game }) => {
       <button onClick={() => game.refresh()}>refresh</button>
       <button
         onClick={() => {
-          const group = game.findSet(game.state.board)?.map((x) => x + 1)
+          const group = game.findSet(board)?.map((x) => x + 1)
           setGroup(group ?? null)
         }}
       >
@@ -178,7 +178,7 @@ const Game: React.FC<{
       >
         restart
       </button>
-      {/* <DevCTools game={game} /> */}
+      {/* <DevTools game={game} /> */}
     </>
   )
 }

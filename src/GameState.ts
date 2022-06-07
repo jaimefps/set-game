@@ -32,10 +32,12 @@ export class GameState extends VanillaState {
   private player: CardName[] = []
   private playerPoints = 0
   private computerPoints = 0
+  private computer: CardName[] = []
   private board: CardName[] = []
   private isOver = false
   private refreshCount = 0
   private playerMiss = 0
+  private locked = false
 
   constructor(rerender: any) {
     super(rerender)
@@ -53,11 +55,13 @@ export class GameState extends VanillaState {
       deck: this.deck,
       player: this.player,
       playerPoints: this.playerPoints,
+      computer: this.computer,
       computerPoints: this.computerPoints,
       board: this.board,
       isOver: this.isOver,
       refreshCount: this.refreshCount,
-      playerMiss: this.playerMiss
+      playerMiss: this.playerMiss,
+      locked: this.locked
     } as const
   }
 
@@ -120,6 +124,11 @@ export class GameState extends VanillaState {
 
     let shouldReload = !this.hasSetOnBoard()
     while (shouldReload) {
+      // Avoid orphaned "player" selection if "computer"
+      // takes cards and the player had some selected cards
+      // while the board needs to get reset:
+      this.player = []
+
       this.refresh()
       if (this.hasSetOnBoard()) {
         shouldReload = false
@@ -146,27 +155,35 @@ export class GameState extends VanillaState {
         } else {
           this.playerMiss += 1
         }
-        this.reviewBoard()
         this.player = []
+        this.reviewBoard()
       }
     }
   }
 
   @rerender
-  computerGrabSet() {
+  computerMarkSet() {
     const indexes = this.findSet(this.board)
     if (!indexes) {
       return
     }
 
-    const compSet = indexes.map((n) => this.board[n])
-    this.player = this.player.filter((c) => !compSet?.includes(c))
+    this.computer = indexes.map((n) => this.board[n])
+    this.player = this.player.filter((c) => !this.computer?.includes(c))
     this.computerPoints += 1
+    this.locked = true
+  }
 
-    this.board = this.board
-      .map((c) => (compSet.includes(c) ? this.deck.pop() : c))
-      .filter(Boolean) as CardName[]
+  @rerender
+  computerTakeSet() {
+    if (this.isValidSet(this.computer)) {
+      this.board = this.board
+        .map((c) => (this.computer.includes(c) ? this.deck.pop() : c))
+        .filter(Boolean) as CardName[]
 
-    this.reviewBoard()
+      this.computer = []
+      this.reviewBoard()
+      this.locked = false
+    }
   }
 }

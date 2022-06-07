@@ -38,7 +38,7 @@ const DevTools: React.FC<{ game: GameState }> = ({ game }) => {
 
   return (
     <div style={{ display: "flex", gap: 10 }}>
-      <button onClick={() => game.computerGrabSet()}>computer</button>
+      <button onClick={() => game.computerMarkSet()}>computer</button>
       <button onClick={() => game.refresh()}>refresh</button>
       <button
         onClick={() => {
@@ -59,12 +59,16 @@ const Card: React.FC<{ game: GameState; name: CardName }> = ({
 }) => {
   const imgCount = Number(name.slice(-1))
   const imgName = camelCase(name.slice(0, -2)) as ImageMapKey
-  const isSelected = game.state.player.includes(name)
+  const isSelected = game.state.player.includes(name) ? "selected" : ""
+  const isCompSelected = game.state.computer.includes(name)
+    ? "comp-selected"
+    : ""
 
   return (
     <div
-      onClick={() => game.select(name)}
-      className={`card ${isSelected ? "selected" : ""}`}
+      // prevent user actions when game is "locked" (computer animation)
+      onClick={game.state.locked ? undefined : () => game.select(name)}
+      className={`card ${isSelected} ${isCompSelected}`}
     >
       {[...Array(imgCount).keys()].map((k) => (
         <img

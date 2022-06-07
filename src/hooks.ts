@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { GameState } from "./GameState"
 
+export function usePrevious<V = any>(value: V): V | undefined {
+  const ref = useRef()
+
+  useEffect(() => {
+    ref.current = value as any
+  }, [value])
+
+  return ref.current
+}
+
 export const useCountdown = ({
   to,
   from,
@@ -33,38 +43,46 @@ export const useCountdown = ({
 }
 
 export const useComputer = (game: GameState, wait: number) => {
-  const { count, restart } = useCountdown({
+  const { count: markerCount, restart: markerCountRestart } = useCountdown({
     to: 0,
     from: wait,
+    speed: 1000
+  })
+
+  const { count: takerCount, restart: takerCountRestart } = useCountdown({
+    to: 0,
+    from: 1,
     speed: 1000
   })
 
   const skipped = useRef(false)
   const done = game.state.isOver
 
+  // mark cards found by computer:
   useEffect(() => {
     if (skipped.current) {
-      if (!done && count === 0) {
-        game.computerGrabSet()
-        restart()
+      if (!done && markerCount === 0) {
+        game.computerMarkSet()
+        markerCountRestart()
+        takerCountRestart()
       }
     } else {
       skipped.current = true
-      restart()
+      markerCountRestart()
     }
-  }, [count, done, restart, game])
+  }, [markerCount, done, markerCountRestart, takerCountRestart, game])
+
+  const currComp = game.state.computer
+  const prevTakerCount = usePrevious(takerCount)
+
+  // take cards marked by computer:
+  useEffect(() => {
+    if (currComp.length === 3 && prevTakerCount === 1 && takerCount === 0) {
+      game.computerTakeSet()
+    }
+  }, [takerCount, currComp, prevTakerCount, game])
 
   return {
-    count
+    count: markerCount
   }
-}
-
-export function usePrevious<V = any>(value: V): V | undefined {
-  const ref = useRef()
-
-  useEffect(() => {
-    ref.current = value as any
-  }, [value])
-
-  return ref.current
 }

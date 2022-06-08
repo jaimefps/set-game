@@ -168,7 +168,7 @@ const Game: React.FC<{
 
   return (
     <>
-      <div>computer will find a set in {count} seconds!</div>
+      <div>Computer will find a set in {count} seconds!</div>
       <Counters game={game} />
       <Board game={game} />
       <button

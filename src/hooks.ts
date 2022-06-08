@@ -26,6 +26,7 @@ export const useCountdown = ({
 
   const [count, setCount] = useState(to)
   const restart = useCallback(() => setCount(from), [from])
+  const delay = useCallback((n: number) => setCount((c) => c + n), [])
 
   useEffect(() => {
     if (count > to) {
@@ -38,12 +39,17 @@ export const useCountdown = ({
 
   return {
     count,
-    restart
+    restart,
+    delay
   }
 }
 
 export const useComputer = (game: GameState, wait: number) => {
-  const { count: markerCount, restart: markerCountRestart } = useCountdown({
+  const {
+    delay,
+    count: markerCount,
+    restart: markerCountRestart
+  } = useCountdown({
     to: 0,
     from: wait,
     speed: 1000
@@ -51,12 +57,18 @@ export const useComputer = (game: GameState, wait: number) => {
 
   const { count: takerCount, restart: takerCountRestart } = useCountdown({
     to: 0,
-    from: 1,
+    from: 2,
     speed: 1000
   })
 
   const skipped = useRef(false)
   const done = game.state.isOver
+
+  useEffect(() => {
+    delay(3)
+    // delay "computer" a few seconds
+    // any time the player finds a set
+  }, [game.state.playerPoints, delay])
 
   // mark cards found by computer:
   useEffect(() => {

@@ -91,7 +91,9 @@ export const useComputer = (game: GameState, wait: number) => {
   // delay computer a few seconds
   // any time the player finds a set
   useEffect(() => {
-    delay(3)
+    if (game.state.playerPoints > 0) {
+      delay(3)
+    }
   }, [game.state.playerPoints, delay])
 
   // restart computer timer

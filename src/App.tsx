@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react"
 import camelCase from "lodash/camelCase"
-import { CardName, GameState } from "./GameState"
+import { CardName, GameState, findSet } from "./GameState"
 import { ImageMap, ImageMapKey } from "./ImageMap"
 import { useVanillaState } from "use-vanilla-state"
 import { useComputer, useCountdown, usePrevious } from "./hooks"
 import extraTimeSrc from "./assets/extra-time.png"
 import {
-  OverLaySet,
-  OverLayNope,
+  OverlaySet,
+  OverlayNope,
   OverlayRefresh,
   OverlayGameOver,
-  OverLayComputerSet
+  OverlayComputerSet
 } from "./Overlay"
 
 const DIFFICULTY_MAP = {
@@ -26,40 +26,13 @@ type GameConfig = {
   difficulty: Difficulty
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DevTools: React.FC<{ game: GameState }> = ({ game }) => {
-  const [group, setGroup] = useState<any[] | null>(null)
-  const { playerPoints, computerPoints, board } = game.state
-
-  useEffect(() => {
-    if (playerPoints > 0 || computerPoints > 0) {
-      setGroup(null)
-    }
-  }, [playerPoints, computerPoints, setGroup])
-
-  return (
-    <div style={{ display: "flex", gap: 10 }}>
-      <button onClick={() => game.computerMarkSet()}>computer</button>
-      <button onClick={() => game.refresh()}>refresh</button>
-      <button
-        onClick={() => {
-          const group = game.findSet(board)?.map((x) => x + 1)
-          setGroup(group ?? null)
-        }}
-      >
-        find
-      </button>
-      <div>{JSON.stringify(group)}</div>
-    </div>
-  )
-}
-
 const Card: React.FC<{ game: GameState; name: CardName }> = ({
   game,
   name
 }) => {
   const imgCount = Number(name.slice(-1))
   const imgName = camelCase(name.slice(0, -2)) as ImageMapKey
+
   const isSelected = game.state.player.includes(name) ? "selected" : ""
   const isCompSelected = game.state.computer.includes(name)
     ? "comp-selected"
@@ -67,7 +40,6 @@ const Card: React.FC<{ game: GameState; name: CardName }> = ({
 
   return (
     <div
-      // prevent user actions when game is "locked" (computer animation)
       onClick={game.state.locked ? undefined : () => game.select(name)}
       className={`card ${isSelected} ${isCompSelected}`}
     >
@@ -86,11 +58,11 @@ const Card: React.FC<{ game: GameState; name: CardName }> = ({
 const Board: React.FC<{ game: GameState }> = ({ game }) => {
   return (
     <div className="board">
-      <OverLaySet game={game} />
-      <OverLayNope game={game} />
+      <OverlaySet game={game} />
+      <OverlayNope game={game} />
       <OverlayRefresh game={game} />
       <OverlayGameOver game={game} />
-      <OverLayComputerSet game={game} />
+      <OverlayComputerSet game={game} />
       {game.state.board.map((c) => {
         return <Card key={c} name={c} game={game} />
       })}
@@ -122,16 +94,12 @@ const Settings: React.FC<{
   onChange: (c: GameConfig) => void
 }> = ({ config, onChange }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 15
-      }}
-    >
-      <div style={{ fontWeight: "bold" }}>Game Settings</div>
+    <div className="settings">
+      <div>
+        <b>Game Settings</b>
+      </div>
       <select
+        className="difficulties"
         value={config.difficulty}
         onChange={(e) =>
           onChange({
@@ -140,12 +108,12 @@ const Settings: React.FC<{
           })
         }
       >
-        <option value="easy">Easy (30 secs)</option>
-        <option value="medium">Medium (20 secs)</option>
-        <option value="hard">Hard (15 secs)</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
       </select>
       <button
-        style={{ padding: "0px 25px" }}
+        className="cta"
         onClick={() =>
           onChange({
             ...config,
@@ -160,31 +128,27 @@ const Settings: React.FC<{
 }
 
 const ExtraTime: React.FC<{ game: GameState }> = ({ game }) => {
-  const { count: extraTimeCount, restart: restartExtraTime } = useCountdown({
+  const { count, restart } = useCountdown({
     to: 0,
     from: 10,
     speed: 80
   })
 
-  const currPoints = game.state.playerPoints
-  const prevPoints = usePrevious<typeof currPoints>(currPoints)
+  const { playerPoints } = game.state
+  const prevPlayerPoints = usePrevious<number>(playerPoints)
 
   useEffect(() => {
-    if (currPoints > 0 && prevPoints !== currPoints) {
-      restartExtraTime()
+    if (playerPoints > 0 && prevPlayerPoints !== playerPoints) {
+      restart()
     }
-  }, [prevPoints, currPoints, restartExtraTime])
+  }, [prevPlayerPoints, playerPoints, restart])
 
   return (
     <img
       alt="extra-time"
+      className="extra-time"
       src={extraTimeSrc}
-      style={{
-        marginLeft: 5,
-        width: 50,
-        height: 20,
-        opacity: extraTimeCount / 10
-      }}
+      style={{ opacity: count / 10 }}
     />
   )
 }
@@ -198,21 +162,14 @@ const Game: React.FC<{
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          marginRight: -50
-        }}
-      >
+      <div className="computer-time">
         Computer will find a set in {count} seconds!
         <ExtraTime game={game} />
       </div>
       <Counters game={game} />
       <Board game={game} />
       <button
-        style={{ padding: "0px 15px" }}
+        className="cta"
         onClick={() =>
           onChangeConfig({
             ready: false,
@@ -227,7 +184,7 @@ const Game: React.FC<{
   )
 }
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   const [config, setConfig] = useState<GameConfig>({
     ready: false,
     difficulty: "easy"
@@ -244,4 +201,30 @@ const App: React.FC = () => {
   )
 }
 
-export default App
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const DevTools: React.FC<{ game: GameState }> = ({ game }) => {
+  const [group, setGroup] = useState<any[] | null>(null)
+  const { playerPoints, computerPoints, board } = game.state
+
+  useEffect(() => {
+    if (playerPoints > 0 || computerPoints > 0) {
+      setGroup(null)
+    }
+  }, [playerPoints, computerPoints, setGroup])
+
+  return (
+    <div className="dev-tools">
+      <button onClick={() => game.computerMarkSet()}>computer</button>
+      <button onClick={() => game.refresh()}>refresh</button>
+      <button
+        onClick={() => {
+          const group = findSet(board)?.map((x) => x + 1)
+          setGroup(group ?? null)
+        }}
+      >
+        find
+      </button>
+      <div>{JSON.stringify(group)}</div>
+    </div>
+  )
+}

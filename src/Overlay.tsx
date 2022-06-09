@@ -22,20 +22,20 @@ const Overlay: React.FC<{
   )
 }
 
-export const OverLayNope: React.FC<{ game: GameState }> = ({ game }) => {
+export const OverlayNope: React.FC<{ game: GameState }> = ({ game }) => {
+  const { playerMiss } = game.state
+
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
     speed: 80
   })
 
-  const misses = game.state.playerMiss
-
   useEffect(() => {
-    if (misses > 0) {
+    if (playerMiss > 0) {
       restart()
     }
-  }, [misses, restart])
+  }, [playerMiss, restart])
 
   return (
     <Overlay zIndex={1}>
@@ -44,47 +44,47 @@ export const OverLayNope: React.FC<{ game: GameState }> = ({ game }) => {
   )
 }
 
-export const OverLaySet: React.FC<{ game: GameState }> = ({ game }) => {
+export const OverlaySet: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
     speed: 80
   })
 
-  const currPoints = game.state.playerPoints
-  const prevPoints = usePrevious<typeof currPoints>(currPoints)
+  const { playerPoints } = game.state
+  const prevPlayerPoints = usePrevious<number>(playerPoints)
 
   useEffect(() => {
-    if (currPoints > 0 && prevPoints !== currPoints) {
+    if (playerPoints > 0 && prevPlayerPoints !== playerPoints) {
       restart()
     }
-  }, [prevPoints, currPoints, restart])
+  }, [prevPlayerPoints, playerPoints, restart])
 
   return (
-    <Overlay zIndex={2}>
+    <Overlay zIndex={1}>
       <img alt="set" src={setSrc} style={{ opacity: count / 10 }} />
     </Overlay>
   )
 }
 
-export const OverLayComputerSet: React.FC<{ game: GameState }> = ({ game }) => {
+export const OverlayComputerSet: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
     speed: 80
   })
 
-  const currPoints = game.state.computerPoints
-  const prevPoints = usePrevious<typeof currPoints>(currPoints)
+  const { computerPoints } = game.state
+  const prevComputerPoints = usePrevious<number>(computerPoints) ?? 0
 
   useEffect(() => {
-    if (currPoints > 0 && prevPoints !== currPoints) {
+    if (computerPoints > 0 && prevComputerPoints !== computerPoints) {
       restart()
     }
-  }, [prevPoints, currPoints, restart])
+  }, [prevComputerPoints, computerPoints, restart])
 
   return (
-    <Overlay zIndex={2}>
+    <Overlay zIndex={1}>
       <img
         alt="computer-takes"
         src={computerTakeSrc}
@@ -101,27 +101,19 @@ export const OverlayRefresh: React.FC<{ game: GameState }> = ({ game }) => {
     speed: 175
   })
 
-  const currRefresh = game.state.refreshCount
-  const prevRefresh = usePrevious<typeof currRefresh>(currRefresh) ?? 0
+  const { refreshCount } = game.state
+  const prevRefreshCount = usePrevious<number>(refreshCount) ?? 0
 
   useEffect(() => {
-    if (prevRefresh < currRefresh) {
+    if (prevRefreshCount < refreshCount) {
       restart()
     }
-  }, [prevRefresh, currRefresh, restart])
+  }, [prevRefreshCount, refreshCount, restart])
 
   return (
-    <Overlay zIndex={3}>
-      <div
-        style={{
-          padding: 10,
-          border: "4px solid purple",
-          backgroundColor: "plum",
-          borderRadius: 20,
-          opacity: count / 10
-        }}
-      >
-        <img alt="reload" src={reloadSrc} style={{ opacity: count / 10 }} />
+    <Overlay zIndex={1}>
+      <div className="refresh-alert" style={{ opacity: count / 10 }}>
+        <img alt="reload" src={reloadSrc} />
       </div>
     </Overlay>
   )
@@ -134,8 +126,10 @@ export const OverlayGameOver: React.FC<{ game: GameState }> = ({ game }) => {
 
   const tieGame = game.state.playerPoints === game.state.computerPoints
   const playerWins = game.state.playerPoints > game.state.computerPoints
+
   const alt = tieGame ? "tie-game" : playerWins ? "you-win" : "you-lose"
   const src = tieGame ? tieSrc : playerWins ? youWinSrc : youLoseSrc
+
   const style = tieGame
     ? {
         borderColor: "darkblue",
@@ -152,15 +146,8 @@ export const OverlayGameOver: React.FC<{ game: GameState }> = ({ game }) => {
       }
 
   return (
-    <Overlay zIndex={4}>
-      <div
-        style={{
-          padding: 10,
-          border: "4px solid",
-          borderRadius: 20,
-          ...style
-        }}
-      >
+    <Overlay zIndex={1}>
+      <div className="game-over-alert" style={{ ...style }}>
         <img src={src} alt={alt} />
       </div>
     </Overlay>

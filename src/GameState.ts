@@ -27,17 +27,51 @@ function makeCards() {
   return cards as CardName[]
 }
 
+function allDifferent(attributes: string[]) {
+  const [a, b, c] = attributes
+  return a !== b && a !== c && b !== c
+}
+
+function allAreSame(attributes: string[]) {
+  const [a, b, c] = attributes
+  return a === b && b === c
+}
+
+function isValidSet(cards: CardName[]) {
+  const inParts = cards.map((s) => s.split("-"))
+  for (let i = 0; i < 4; i++) {
+    const currParts = inParts.map((group) => group[i])
+    const allDiff = allDifferent(currParts)
+    const allSame = allAreSame(currParts)
+    if (!allSame && !allDiff) return false
+  }
+  return true
+}
+
+export function findSet(list: CardName[]) {
+  for (let i = 0; i < list.length - 2; i++) {
+    for (let j = i + 1; j < list.length - 1; j++) {
+      for (let k = j + 1; k < list.length; k++) {
+        const indexes = [i, j, k]
+        const cards = indexes.map((idx) => list[idx])
+        if (isValidSet(cards)) return indexes
+      }
+    }
+  }
+  return null
+}
+
 export class GameState extends VanillaState {
-  private deck: CardName[] = []
-  private player: CardName[] = []
-  private playerPoints = 0
-  private computerPoints = 0
-  private computer: CardName[] = []
   private board: CardName[] = []
+  private computer: CardName[] = []
+  private computerPoints = 0
+  private deck: CardName[] = []
   private isOver = false
-  private refreshCount = 0
-  private playerMiss = 0
   private locked = false
+  private player: CardName[] = []
+  private playerMiss = 0
+  private playerPoints = 0
+  private refreshCount = 0
 
   constructor(rerender: any) {
     super(rerender)
@@ -65,57 +99,15 @@ export class GameState extends VanillaState {
     } as const
   }
 
-  allDifferent(attributes: string[]) {
-    const [a, b, c] = attributes
-    return a !== b && a !== c && b !== c
+  private hasSetOnBoard() {
+    return findSet(this.board)
   }
 
-  allSame(attributes: string[]) {
-    const [a, b, c] = attributes
-    return a === b && b === c
+  private hasSetInGame() {
+    return findSet([...this.deck, ...this.board])
   }
 
-  isValidSet(cards: CardName[]) {
-    const inParts = cards.map((s) => s.split("-"))
-    for (let i = 0; i < 4; i++) {
-      const currParts = inParts.map((group) => group[i])
-      const allDiff = this.allDifferent(currParts)
-      const allSame = this.allSame(currParts)
-      if (!allSame && !allDiff) return false
-    }
-    return true
-  }
-
-  findSet(list: CardName[]) {
-    for (let i = 0; i < list.length - 2; i++) {
-      for (let j = i + 1; j < list.length - 1; j++) {
-        for (let k = j + 1; k < list.length; k++) {
-          const indexes = [i, j, k]
-          const cards = indexes.map((idx) => list[idx])
-          if (this.isValidSet(cards)) return indexes
-        }
-      }
-    }
-    return null
-  }
-
-  hasSetOnBoard() {
-    return this.findSet(this.board)
-  }
-
-  hasSetInGame() {
-    return this.findSet([...this.deck, ...this.board])
-  }
-
-  @rerender
-  refresh() {
-    const cards = shuffle([...this.deck, ...this.board])
-    this.board = cards.slice(0, 12)
-    this.deck = cards.slice(12)
-    this.refreshCount += 1
-  }
-
-  reviewBoard() {
+  private reviewBoard() {
     const canMakeSet = this.hasSetInGame()
     if (!canMakeSet) {
       this.isOver = true
@@ -149,7 +141,7 @@ export class GameState extends VanillaState {
     if (this.player.length < 3) {
       this.player.push(card)
       if (this.player.length === 3) {
-        if (this.isValidSet(this.player)) {
+        if (isValidSet(this.player)) {
           this.playerPoints += 1
           this.board = this.board
             .map((c) => (this.player.includes(c) ? this.deck.pop() : c))
@@ -165,7 +157,7 @@ export class GameState extends VanillaState {
 
   @rerender
   computerMarkSet() {
-    const indexes = this.findSet(this.board)
+    const indexes = findSet(this.board)
     if (!indexes) {
       return
     }
@@ -178,7 +170,7 @@ export class GameState extends VanillaState {
 
   @rerender
   computerTakeSet() {
-    if (this.isValidSet(this.computer)) {
+    if (isValidSet(this.computer)) {
       this.board = this.board
         .map((c) => (this.computer.includes(c) ? this.deck.pop() : c))
         .filter(Boolean) as CardName[]
@@ -187,5 +179,13 @@ export class GameState extends VanillaState {
       this.reviewBoard()
       this.locked = false
     }
+  }
+
+  @rerender
+  refresh() {
+    const cards = shuffle([...this.deck, ...this.board])
+    this.board = cards.slice(0, 12)
+    this.deck = cards.slice(12)
+    this.refreshCount += 1
   }
 }

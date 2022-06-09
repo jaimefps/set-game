@@ -10,12 +10,13 @@ import youWinSrc from "./assets/you-win.png"
 import youLoseSrc from "./assets/you-lose.png"
 import computerTakeSrc from "./assets/computer-takes.png"
 
-const Overlay: React.FC<{ zIndex: number; children: React.ReactNode }> = ({
-  zIndex,
-  children
-}) => {
+const Overlay: React.FC<{
+  zIndex: number
+  children: React.ReactNode
+  style?: React.CSSProperties
+}> = ({ zIndex, children, style = {} }) => {
   return (
-    <div className="overlay" style={{ zIndex }}>
+    <div className="overlay" style={{ zIndex, ...style }}>
       {children}
     </div>
   )

@@ -119,6 +119,8 @@ export class GameState extends VanillaState {
     const canMakeSet = this.hasSetInGame()
     if (!canMakeSet) {
       this.isOver = true
+      this.locked = true
+      this.player = []
       return
     }
 

@@ -3,7 +3,8 @@ import camelCase from "lodash/camelCase"
 import { CardName, GameState } from "./GameState"
 import { ImageMap, ImageMapKey } from "./ImageMap"
 import { useVanillaState } from "use-vanilla-state"
-import { useComputer } from "./hooks"
+import { useComputer, useCountdown, usePrevious } from "./hooks"
+import extraTimeSrc from "./assets/extra-time.png"
 import {
   OverLaySet,
   OverLayNope,
@@ -158,17 +159,56 @@ const Settings: React.FC<{
   )
 }
 
+const ExtraTime: React.FC<{ game: GameState }> = ({ game }) => {
+  const { count: extraTimeCount, restart: restartExtraTime } = useCountdown({
+    to: 0,
+    from: 10,
+    speed: 80
+  })
+
+  const currPoints = game.state.playerPoints
+  const prevPoints = usePrevious<typeof currPoints>(currPoints)
+
+  useEffect(() => {
+    if (currPoints > 0 && prevPoints !== currPoints) {
+      restartExtraTime()
+    }
+  }, [prevPoints, currPoints, restartExtraTime])
+
+  return (
+    <img
+      alt="extra-time"
+      src={extraTimeSrc}
+      style={{
+        marginLeft: 5,
+        width: 50,
+        height: 20,
+        opacity: extraTimeCount / 10
+      }}
+    />
+  )
+}
+
 const Game: React.FC<{
   config: GameConfig
   onChangeConfig: (c: GameConfig) => void
 }> = ({ config: { difficulty }, onChangeConfig }) => {
   const game = useVanillaState(GameState)
-  const wait = DIFFICULTY_MAP[difficulty]
-  const { count } = useComputer(game, wait)
+  const { count } = useComputer(game, DIFFICULTY_MAP[difficulty])
 
   return (
     <>
-      <div>Computer will find a set in {count} seconds!</div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          marginRight: -50
+        }}
+      >
+        Computer will find a set in {count} seconds!
+        <ExtraTime game={game} />
+      </div>
       <Counters game={game} />
       <Board game={game} />
       <button

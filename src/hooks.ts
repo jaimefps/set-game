@@ -57,20 +57,14 @@ export const useComputer = (game: GameState, wait: number) => {
 
   const { count: takerCount, restart: takerCountRestart } = useCountdown({
     to: 0,
-    from: 2,
-    speed: 1000
+    from: 1,
+    speed: 1800
   })
 
+  // mark cards found by computer and
+  // start countdown to take cards:
   const skipped = useRef(false)
   const done = game.state.isOver
-
-  useEffect(() => {
-    delay(3)
-    // delay "computer" a few seconds
-    // any time the player finds a set
-  }, [game.state.playerPoints, delay])
-
-  // mark cards found by computer:
   useEffect(() => {
     if (skipped.current) {
       if (!done && markerCount === 0) {
@@ -84,15 +78,29 @@ export const useComputer = (game: GameState, wait: number) => {
     }
   }, [markerCount, done, markerCountRestart, takerCountRestart, game])
 
+  // take cards from the board that
+  // were previously marked by computer:
   const currComp = game.state.computer
   const prevTakerCount = usePrevious(takerCount)
-
-  // take cards marked by computer:
   useEffect(() => {
     if (currComp.length === 3 && prevTakerCount === 1 && takerCount === 0) {
       game.computerTakeSet()
     }
   }, [takerCount, currComp, prevTakerCount, game])
+
+  // delay computer a few seconds
+  // any time the player finds a set
+  useEffect(() => {
+    delay(3)
+  }, [game.state.playerPoints, delay])
+
+  // restart computer timer
+  // when the board is reset:
+  useEffect(() => {
+    if (game.state.refreshCount > 1) {
+      markerCountRestart()
+    }
+  }, [markerCountRestart, game.state.refreshCount])
 
   return {
     count: markerCount

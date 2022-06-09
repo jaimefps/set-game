@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from "react"
-import camelCase from "lodash/camelCase"
 import { CardName, GameState, findSet } from "./GameState"
 import { ImageMap, ImageMapKey } from "./ImageMap"
 import { useVanillaState } from "use-vanilla-state"
-import { useComputer, useCountdown, usePrevious } from "./hooks"
+import { useComputer, useCountdown } from "./hooks"
 import extraTimeSrc from "./assets/extra-time.png"
+import camelCase from "lodash/camelCase"
 import {
   OverlaySet,
   OverlayNope,
   OverlayRefresh,
   OverlayGameOver,
-  OverlayComputerSet
+  OverlayComputerSet,
 } from "./Overlay"
 
 const DIFFICULTY_MAP = {
-  easy: 30,
-  medium: 20,
-  hard: 15
+  easy: 34,
+  medium: 21,
+  hard: 13,
 } as const
 
 type Difficulty = keyof typeof DIFFICULTY_MAP
@@ -26,10 +26,10 @@ type GameConfig = {
   difficulty: Difficulty
 }
 
-const Card: React.FC<{ game: GameState; name: CardName }> = ({
-  game,
-  name
-}) => {
+const Card: React.FC<{
+  game: GameState
+  name: CardName
+}> = ({ game, name }) => {
   const imgCount = Number(name.slice(-1))
   const imgName = camelCase(name.slice(0, -2)) as ImageMapKey
 
@@ -55,7 +55,9 @@ const Card: React.FC<{ game: GameState; name: CardName }> = ({
   )
 }
 
-const Board: React.FC<{ game: GameState }> = ({ game }) => {
+const Board: React.FC<{
+  game: GameState
+}> = ({ game }) => {
   return (
     <div className="board">
       <OverlaySet game={game} />
@@ -70,21 +72,26 @@ const Board: React.FC<{ game: GameState }> = ({ game }) => {
   )
 }
 
-const Counters: React.FC<{ game: GameState }> = ({ game }) => {
+const CounterItem: React.FC<{
+  label: string
+  value: number
+}> = ({ label, value }) => {
+  return (
+    <div className="points-container">
+      <div className="points-name">{label}</div>
+      <div className="points-value">{value}</div>
+    </div>
+  )
+}
+
+const Counters: React.FC<{
+  game: GameState
+}> = ({ game }) => {
   return (
     <div className="counters">
-      <div className="points-container">
-        <div className="points-name">deck</div>
-        <div className="points-value">{game.state.deck.length}</div>
-      </div>
-      <div className="points-container">
-        <div className="points-name">player</div>
-        <div className="points-value">{game.state.playerPoints}</div>
-      </div>
-      <div className="points-container">
-        <div className="points-name">computer</div>
-        <div className="points-value">{game.state.computerPoints}</div>
-      </div>
+      <CounterItem label="deck" value={game.state.deck.length} />
+      <CounterItem label="player" value={game.state.playerPoints} />
+      <CounterItem label="computer" value={game.state.computerPoints} />
     </div>
   )
 }
@@ -104,7 +111,7 @@ const Settings: React.FC<{
         onChange={(e) =>
           onChange({
             ...config,
-            difficulty: e.target.value as Difficulty
+            difficulty: e.target.value as Difficulty,
           })
         }
       >
@@ -117,7 +124,7 @@ const Settings: React.FC<{
         onClick={() =>
           onChange({
             ...config,
-            ready: true
+            ready: true,
           })
         }
       >
@@ -127,21 +134,22 @@ const Settings: React.FC<{
   )
 }
 
-const ExtraTime: React.FC<{ game: GameState }> = ({ game }) => {
+const ExtraTime: React.FC<{
+  game: GameState
+}> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
-    speed: 80
+    speed: 80,
   })
 
   const { playerPoints } = game.state
-  const prevPlayerPoints = usePrevious<number>(playerPoints)
 
   useEffect(() => {
-    if (playerPoints > 0 && prevPlayerPoints !== playerPoints) {
+    if (playerPoints > 0) {
       restart()
     }
-  }, [prevPlayerPoints, playerPoints, restart])
+  }, [playerPoints, restart])
 
   return (
     <img
@@ -173,21 +181,21 @@ const Game: React.FC<{
         onClick={() =>
           onChangeConfig({
             ready: false,
-            difficulty
+            difficulty,
           })
         }
       >
         restart
       </button>
-      {/* <DevTools game={game} /> */}
+      <DevTools game={game} />
     </>
   )
 }
 
 export const App: React.FC = () => {
   const [config, setConfig] = useState<GameConfig>({
+    difficulty: "easy",
     ready: false,
-    difficulty: "easy"
   })
 
   return (
@@ -202,8 +210,10 @@ export const App: React.FC = () => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DevTools: React.FC<{ game: GameState }> = ({ game }) => {
-  const [group, setGroup] = useState<any[] | null>(null)
+const DevTools: React.FC<{
+  game: GameState
+}> = ({ game }) => {
+  const [group, setGroup] = useState<number[] | null>(null)
   const { playerPoints, computerPoints, board } = game.state
 
   useEffect(() => {

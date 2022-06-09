@@ -57,5 +57,5 @@ export const ImageMap = {
   purpleDiamondVoid,
   purpleTildeSolid,
   purpleTildeStripe,
-  purpleTildeVoid
+  purpleTildeVoid,
 } as const

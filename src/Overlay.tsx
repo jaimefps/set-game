@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { useCountdown, usePrevious } from "./hooks"
+import { useCountdown } from "./hooks"
 import { GameState } from "./GameState"
 
 import reloadSrc from "./assets/reload.png"
@@ -28,7 +28,7 @@ export const OverlayNope: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
-    speed: 80
+    speed: 80,
   })
 
   useEffect(() => {
@@ -48,17 +48,16 @@ export const OverlaySet: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
-    speed: 80
+    speed: 80,
   })
 
   const { playerPoints } = game.state
-  const prevPlayerPoints = usePrevious<number>(playerPoints)
 
   useEffect(() => {
-    if (playerPoints > 0 && prevPlayerPoints !== playerPoints) {
+    if (playerPoints > 0) {
       restart()
     }
-  }, [prevPlayerPoints, playerPoints, restart])
+  }, [playerPoints, restart])
 
   return (
     <Overlay zIndex={1}>
@@ -71,17 +70,16 @@ export const OverlayComputerSet: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
-    speed: 80
+    speed: 80,
   })
 
   const { computerPoints } = game.state
-  const prevComputerPoints = usePrevious<number>(computerPoints) ?? 0
 
   useEffect(() => {
-    if (computerPoints > 0 && prevComputerPoints !== computerPoints) {
+    if (computerPoints > 0) {
       restart()
     }
-  }, [prevComputerPoints, computerPoints, restart])
+  }, [computerPoints, restart])
 
   return (
     <Overlay zIndex={1}>
@@ -98,17 +96,16 @@ export const OverlayRefresh: React.FC<{ game: GameState }> = ({ game }) => {
   const { count, restart } = useCountdown({
     to: 0,
     from: 10,
-    speed: 175
+    speed: 175,
   })
 
   const { refreshCount } = game.state
-  const prevRefreshCount = usePrevious<number>(refreshCount) ?? 0
 
   useEffect(() => {
-    if (prevRefreshCount < refreshCount) {
+    if (refreshCount > 0) {
       restart()
     }
-  }, [prevRefreshCount, refreshCount, restart])
+  }, [refreshCount, restart])
 
   return (
     <Overlay zIndex={1}>
@@ -133,16 +130,16 @@ export const OverlayGameOver: React.FC<{ game: GameState }> = ({ game }) => {
   const style = tieGame
     ? {
         borderColor: "darkblue",
-        backgroundColor: "lightblue"
+        backgroundColor: "lightblue",
       }
     : playerWins
     ? {
         borderColor: "darkgreen",
-        backgroundColor: "lightgreen"
+        backgroundColor: "lightgreen",
       }
     : {
         borderColor: "darkred",
-        backgroundColor: "pink"
+        backgroundColor: "pink",
       }
 
   return (

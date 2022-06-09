@@ -86,16 +86,16 @@ export class GameState extends VanillaState {
 
   get state() {
     return {
-      deck: this.deck,
-      player: this.player,
-      playerPoints: this.playerPoints,
+      board: this.board,
       computer: this.computer,
       computerPoints: this.computerPoints,
-      board: this.board,
+      deck: this.deck,
       isOver: this.isOver,
-      refreshCount: this.refreshCount,
+      locked: this.locked,
+      player: this.player,
       playerMiss: this.playerMiss,
-      locked: this.locked
+      playerPoints: this.playerPoints,
+      refreshCount: this.refreshCount,
     } as const
   }
 
@@ -176,8 +176,8 @@ export class GameState extends VanillaState {
         .filter(Boolean) as CardName[]
 
       this.computer = []
-      this.reviewBoard()
       this.locked = false
+      this.reviewBoard()
     }
   }
 

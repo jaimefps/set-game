@@ -187,7 +187,7 @@ const Game: React.FC<{
       >
         restart
       </button>
-      <DevTools game={game} />
+      {/* <DevTools game={game} /> */}
     </>
   )
 }

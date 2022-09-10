@@ -48,17 +48,26 @@ function isValidSet(cards: CardName[]) {
   return true
 }
 
-export function findSet(list: CardName[]) {
+export function findSet(list: CardName[]): number[] | null
+export function findSet(list: CardName[], amount: "all"): [number[]]
+export function findSet(list: CardName[], amount?: "all") {
+  const sets = []
   for (let i = 0; i < list.length - 2; i++) {
     for (let j = i + 1; j < list.length - 1; j++) {
       for (let k = j + 1; k < list.length; k++) {
         const indexes = [i, j, k]
         const cards = indexes.map((idx) => list[idx])
-        if (isValidSet(cards)) return indexes
+        if (isValidSet(cards)) {
+          if (!amount) {
+            return indexes
+          } else {
+            sets.push(indexes)
+          }
+        }
       }
     }
   }
-  return null
+  return amount ? sets : null
 }
 
 export class GameState extends VanillaState {

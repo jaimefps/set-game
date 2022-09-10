@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { GameState } from "./GameState"
+import { findSet, GameState } from "./GameState"
 
 export const useCountdown = ({
   to,
@@ -17,7 +17,12 @@ export const useCountdown = ({
   }
 
   const [count, setCount] = useState(start ?? to)
-  const restart = useCallback(() => setCount(from), [from])
+  const restart = useCallback(
+    (newCount?: number) => {
+      setCount(newCount ?? from)
+    },
+    [from]
+  )
   const delay = useCallback((n: number) => setCount((c) => c + n), [])
 
   useEffect(() => {
@@ -34,6 +39,13 @@ export const useCountdown = ({
     restart,
     delay,
   }
+}
+
+const amounts: number[] = []
+function getNextWait(setsNum: number, baseWait: number) {
+  amounts.push(setsNum)
+  console.log(`There will be ${setsNum} possible sets on the board.`)
+  return setsNum < 5 ? 6 - setsNum + baseWait : baseWait
 }
 
 export const useComputer = (game: GameState, wait: number) => {
@@ -56,13 +68,29 @@ export const useComputer = (game: GameState, wait: number) => {
 
   const { isOver, computer, playerPoints, refreshCount } = game.state
 
+  if (isOver) {
+    console.log(amounts.reduce((a, b) => a + b, 0) / amounts.length)
+  }
+
   useEffect(() => {
     if (!isOver && markerCount === 0) {
+      const { computer, deck, board } = game.state
       game.computerMarkSet()
-      markerCountRestart()
+      markerCountRestart(
+        getNextWait(
+          findSet(
+            [
+              ...board.filter((c) => !computer.includes(c)),
+              ...deck.slice(deck.length - 3),
+            ],
+            "all"
+          ).length,
+          wait
+        )
+      )
       takerCountRestart()
     }
-  }, [markerCount, isOver, markerCountRestart, takerCountRestart, game])
+  }, [markerCount, isOver, markerCountRestart, takerCountRestart, game, wait])
 
   useEffect(() => {
     if (computer.length === 3 && takerCount === 0) {
@@ -77,10 +105,10 @@ export const useComputer = (game: GameState, wait: number) => {
   }, [playerPoints, delay])
 
   useEffect(() => {
-    if (refreshCount > 0) {
-      markerCountRestart()
-    }
-  }, [markerCountRestart, refreshCount])
+    markerCountRestart(
+      getNextWait(findSet(game.state.board, "all").length, wait)
+    )
+  }, [markerCountRestart, refreshCount, game, wait])
 
   return {
     count: markerCount,

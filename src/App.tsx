@@ -17,6 +17,7 @@ const DIFFICULTY_MAP = {
   easy: 34,
   medium: 21,
   hard: 13,
+  impossible: 2,
 } as const
 
 type Difficulty = keyof typeof DIFFICULTY_MAP
@@ -118,6 +119,7 @@ const Settings: React.FC<{
         <option value="easy">Easy</option>
         <option value="medium">Medium</option>
         <option value="hard">Hard</option>
+        <option value="impossible">Impossible</option>
       </select>
       <button
         className="cta"

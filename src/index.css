@@ -40,8 +40,10 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 20px;
+  /* "safe" keeps content reachable if it ever overflows the viewport */
+  align-items: safe center;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 /* ---------- shared ---------- */
@@ -189,15 +191,19 @@ body {
 .game {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  width: min(680px, 100%);
+  gap: 12px;
+  /* the board's height tracks its width (3 rows of 3:4 cards ~= width),
+     so capping width by viewport height keeps the whole game on screen
+     at any window size; ~150px covers header + timer + gaps + padding */
+  width: min(680px, 100%, calc(100vh - 150px));
 }
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 12px;
+  flex-wrap: wrap;
 }
 
 .topbar-right {
@@ -426,8 +432,16 @@ body {
     grid-template-columns: repeat(3, 1fr);
   }
 
+  .game {
+    /* 3-col layout stacks 4 rows, so the board is ~1.8x taller than
+       wide — tighten the height-based width cap accordingly (larger
+       allowance: the topbar wraps to two rows at this size) */
+    width: min(100%, calc((100vh - 190px) * 0.55));
+  }
+
   .topbar {
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .logo-large {

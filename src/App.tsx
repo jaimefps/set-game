@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react"
-import { CardName, GameState, findSet } from "./GameState"
-import { ImageMap, ImageMapKey } from "./ImageMap"
+import { CardName, Colors, GameState, Inners, Shapes } from "./GameState"
 import { useVanillaState } from "use-vanilla-state"
 import { useComputer, useCountdown } from "./hooks"
-import extraTimeSrc from "./assets/extra-time.png"
-import camelCase from "lodash/camelCase"
+import { CardSymbol } from "./Symbol"
 import {
   OverlaySet,
   OverlayNope,
@@ -22,6 +20,8 @@ const DIFFICULTY_MAP = {
 
 type Difficulty = keyof typeof DIFFICULTY_MAP
 
+const DIFFICULTIES = Object.keys(DIFFICULTY_MAP) as Difficulty[]
+
 type GameConfig = {
   ready: boolean
   difficulty: Difficulty
@@ -31,68 +31,137 @@ const Card: React.FC<{
   game: GameState
   name: CardName
 }> = ({ game, name }) => {
-  const imgCount = Number(name.slice(-1))
-  const imgName = camelCase(name.slice(0, -2)) as ImageMapKey
+  const [color, shape, inner, num] = name.split("-") as [
+    Colors,
+    Shapes,
+    Inners,
+    string
+  ]
 
-  const isSelected = game.state.player.includes(name) ? "selected" : ""
+  const isSelected = game.state.player.includes(name)
   const isCompSelected = game.state.computer.includes(name)
-    ? "comp-selected"
-    : ""
+  const className = [
+    "card",
+    isSelected && "selected",
+    isCompSelected && "comp-selected",
+  ]
+    .filter(Boolean)
+    .join(" ")
 
   return (
-    <div
+    <button
+      className={className}
       onClick={game.state.locked ? undefined : () => game.select(name)}
-      className={`card ${isSelected} ${isCompSelected}`}
     >
-      {[...Array(imgCount).keys()].map((k) => (
-        <img
-          key={k}
-          alt={imgName}
-          src={ImageMap[imgName]}
-          className="card-icon"
-        />
+      {[...Array(Number(num)).keys()].map((k) => (
+        <CardSymbol key={k} color={color} shape={shape} inner={inner} />
       ))}
-    </div>
+    </button>
   )
 }
 
 const Board: React.FC<{
   game: GameState
-}> = ({ game }) => {
+  onRestart: () => void
+}> = ({ game, onRestart }) => {
   return (
     <div className="board">
       <OverlaySet game={game} />
       <OverlayNope game={game} />
       <OverlayRefresh game={game} />
-      <OverlayGameOver game={game} />
       <OverlayComputerSet game={game} />
-      {game.state.board.map((c) => {
-        return <Card key={c} name={c} game={game} />
-      })}
+      <OverlayGameOver game={game} onRestart={onRestart} />
+      {game.state.board.map((c) => (
+        <Card key={c} name={c} game={game} />
+      ))}
     </div>
   )
 }
 
-const CounterItem: React.FC<{
-  label: string
-  value: number
-}> = ({ label, value }) => {
-  return (
-    <div className="points-container">
-      <div className="points-name">{label}</div>
-      <div className="points-value">{value}</div>
-    </div>
-  )
-}
-
-const Counters: React.FC<{
+const Scoreboard: React.FC<{
   game: GameState
 }> = ({ game }) => {
+  const { deck, playerPoints, computerPoints } = game.state
   return (
-    <div className="counters">
-      <CounterItem label="deck" value={game.state.deck.length} />
-      <CounterItem label="player" value={game.state.playerPoints} />
-      <CounterItem label="computer" value={game.state.computerPoints} />
+    <div className="scoreboard">
+      <div className="score-chip">
+        <span className="score-label">deck</span>
+        <span className="score-value">{deck.length}</span>
+      </div>
+      <div className="score-chip score-you">
+        <span className="score-label">you</span>
+        <span className="score-value">{playerPoints}</span>
+      </div>
+      <div className="score-chip score-cpu">
+        <span className="score-label">computer</span>
+        <span className="score-value">{computerPoints}</span>
+      </div>
+    </div>
+  )
+}
+
+// "+3s" reward chip that fades in whenever the player scores.
+const BonusTime: React.FC<{ game: GameState }> = ({ game }) => {
+  const { playerPoints } = game.state
+  const { count, restart } = useCountdown({ to: 0, from: 10, speed: 80 })
+
+  useEffect(() => {
+    if (playerPoints > 0) restart()
+  }, [playerPoints, restart])
+
+  return (
+    <span className="bonus-time" style={{ opacity: count / 10 }}>
+      +3s
+    </span>
+  )
+}
+
+const Logo: React.FC<{ size?: "small" | "large" }> = ({ size = "small" }) => {
+  return (
+    <div className={`logo logo-${size}`}>
+      <span className="logo-red">S</span>
+      <span className="logo-green">E</span>
+      <span className="logo-purple">T</span>
+    </div>
+  )
+}
+
+const Game: React.FC<{
+  config: GameConfig
+  onChangeConfig: (c: GameConfig) => void
+}> = ({ config: { difficulty }, onChangeConfig }) => {
+  const game = useVanillaState(GameState)
+  const { count } = useComputer(game, DIFFICULTY_MAP[difficulty])
+  const restart = () => onChangeConfig({ ready: false, difficulty })
+  const urgency = count <= 5 ? "danger" : count <= 10 ? "warning" : ""
+
+  return (
+    <div className="game">
+      <header className="topbar">
+        <Logo />
+        <Scoreboard game={game} />
+        <div className="topbar-right">
+          <span className="difficulty-badge">{difficulty}</span>
+          <button className="btn btn-quiet" onClick={restart}>
+            new game
+          </button>
+        </div>
+      </header>
+
+      <div className={`cpu-timer ${urgency}`}>
+        {game.state.isOver ? (
+          <span>game over</span>
+        ) : (
+          <>
+            <span>
+              computer finds a set in <b>{count}s</b>
+            </span>
+            <BonusTime game={game} />
+          </>
+        )}
+      </div>
+
+      <Board game={game} onRestart={restart} />
     </div>
   )
 }
@@ -103,94 +172,36 @@ const Settings: React.FC<{
 }> = ({ config, onChange }) => {
   return (
     <div className="settings">
-      <div>
-        <b>Game Settings</b>
+      <Logo size="large" />
+      <div className="settings-symbols">
+        <CardSymbol color="red" shape="tilde" inner="solid" />
+        <CardSymbol color="green" shape="diamond" inner="stripe" />
+        <CardSymbol color="purple" shape="circle" inner="void" />
       </div>
-      <select
-        className="difficulties"
-        value={config.difficulty}
-        onChange={(e) =>
-          onChange({
-            ...config,
-            difficulty: e.target.value as Difficulty,
-          })
-        }
-      >
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-        <option value="impossible">Impossible</option>
-      </select>
+      <p className="settings-blurb">
+        Find three cards where every feature — color, shape, fill, and count —
+        is either all the same or all different. Beat the computer to it.
+      </p>
+      <div className="difficulty-picker">
+        {DIFFICULTIES.map((d) => (
+          <button
+            key={d}
+            className={`difficulty-option ${
+              config.difficulty === d ? "active" : ""
+            }`}
+            onClick={() => onChange({ ...config, difficulty: d })}
+          >
+            {d}
+          </button>
+        ))}
+      </div>
       <button
-        className="cta"
-        onClick={() =>
-          onChange({
-            ...config,
-            ready: true,
-          })
-        }
+        className="btn btn-primary btn-start"
+        onClick={() => onChange({ ...config, ready: true })}
       >
-        start
+        start game
       </button>
     </div>
-  )
-}
-
-const ExtraTime: React.FC<{
-  game: GameState
-}> = ({ game }) => {
-  const { count, restart } = useCountdown({
-    to: 0,
-    from: 10,
-    speed: 80,
-  })
-
-  const { playerPoints } = game.state
-
-  useEffect(() => {
-    if (playerPoints > 0) {
-      restart()
-    }
-  }, [playerPoints, restart])
-
-  return (
-    <img
-      alt="extra-time"
-      className="extra-time"
-      src={extraTimeSrc}
-      style={{ opacity: count / 10 }}
-    />
-  )
-}
-
-const Game: React.FC<{
-  config: GameConfig
-  onChangeConfig: (c: GameConfig) => void
-}> = ({ config: { difficulty }, onChangeConfig }) => {
-  const game = useVanillaState(GameState)
-  const { count } = useComputer(game, DIFFICULTY_MAP[difficulty])
-
-  return (
-    <>
-      <div className="computer-time">
-        Computer will find a set in {count} seconds!
-        <ExtraTime game={game} />
-      </div>
-      <Counters game={game} />
-      <Board game={game} />
-      <button
-        className="cta"
-        onClick={() =>
-          onChangeConfig({
-            ready: false,
-            difficulty,
-          })
-        }
-      >
-        restart
-      </button>
-      {/* <DevTools game={game} /> */}
-    </>
   )
 }
 
@@ -207,36 +218,6 @@ export const App: React.FC = () => {
       ) : (
         <Settings config={config} onChange={setConfig} />
       )}
-    </div>
-  )
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DevTools: React.FC<{
-  game: GameState
-}> = ({ game }) => {
-  const [group, setGroup] = useState<number[] | null>(null)
-  const { playerPoints, computerPoints, board } = game.state
-
-  useEffect(() => {
-    if (playerPoints > 0 || computerPoints > 0) {
-      setGroup(null)
-    }
-  }, [playerPoints, computerPoints, setGroup])
-
-  return (
-    <div className="dev-tools">
-      <button onClick={() => game.computerMarkSet()}>computer</button>
-      <button onClick={() => game.refresh()}>refresh</button>
-      <button
-        onClick={() => {
-          const group = findSet(board)?.map((x) => x + 1)
-          setGroup(group ?? null)
-        }}
-      >
-        find
-      </button>
-      <div>{JSON.stringify(group)}</div>
     </div>
   )
 }

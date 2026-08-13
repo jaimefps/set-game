@@ -13,4 +13,5 @@ $ yarn start
 
 ## Preview
 
-<img src="./samples/game.png" alt="drawing" width="400"/>
+<img src="./samples/settings.png" alt="start screen" width="400"/>
+<img src="./samples/game.png" alt="game board" width="400"/>

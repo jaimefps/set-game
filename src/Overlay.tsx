@@ -2,151 +2,111 @@ import React, { useEffect } from "react"
 import { useCountdown } from "./hooks"
 import { GameState } from "./GameState"
 
-import reloadSrc from "./assets/reload.png"
-import nopeSrc from "./assets/nope.png"
-import setSrc from "./assets/set.png"
-import tieSrc from "./assets/tie-game.png"
-import youWinSrc from "./assets/you-win.png"
-import youLoseSrc from "./assets/you-lose.png"
-import computerTakeSrc from "./assets/computer-takes.png"
-
-const Overlay: React.FC<{
-  zIndex: number
+// Transient feedback toast, faded out by a countdown. `count` runs
+// 10 -> 0, driving both opacity and a small upward slide.
+const Toast: React.FC<{
+  kind: "good" | "bad" | "info" | "warn"
+  count: number
   children: React.ReactNode
-  style?: React.CSSProperties
-}> = ({ zIndex, children, style = {} }) => {
+}> = ({ kind, count, children }) => {
   return (
-    <div className="overlay" style={{ zIndex, ...style }}>
-      {children}
+    <div className="toast-layer">
+      <div
+        className={`toast toast-${kind}`}
+        style={{
+          opacity: count / 10,
+          transform: `translateY(${(10 - count) * -2}px)`,
+        }}
+      >
+        {children}
+      </div>
     </div>
   )
 }
 
 export const OverlayNope: React.FC<{ game: GameState }> = ({ game }) => {
   const { playerMiss } = game.state
-
-  const { count, restart } = useCountdown({
-    to: 0,
-    from: 10,
-    speed: 80,
-  })
+  const { count, restart } = useCountdown({ to: 0, from: 10, speed: 80 })
 
   useEffect(() => {
-    if (playerMiss > 0) {
-      restart()
-    }
+    if (playerMiss > 0) restart()
   }, [playerMiss, restart])
 
   return (
-    <Overlay zIndex={1}>
-      <img alt="nope" src={nopeSrc} style={{ opacity: count / 10 }} />
-    </Overlay>
+    <Toast kind="bad" count={count}>
+      not a set
+    </Toast>
   )
 }
 
 export const OverlaySet: React.FC<{ game: GameState }> = ({ game }) => {
-  const { count, restart } = useCountdown({
-    to: 0,
-    from: 10,
-    speed: 80,
-  })
-
   const { playerPoints } = game.state
+  const { count, restart } = useCountdown({ to: 0, from: 10, speed: 80 })
 
   useEffect(() => {
-    if (playerPoints > 0) {
-      restart()
-    }
+    if (playerPoints > 0) restart()
   }, [playerPoints, restart])
 
   return (
-    <Overlay zIndex={1}>
-      <img alt="set" src={setSrc} style={{ opacity: count / 10 }} />
-    </Overlay>
+    <Toast kind="good" count={count}>
+      set! +1
+    </Toast>
   )
 }
 
 export const OverlayComputerSet: React.FC<{ game: GameState }> = ({ game }) => {
-  const { count, restart } = useCountdown({
-    to: 0,
-    from: 10,
-    speed: 80,
-  })
-
   const { computerPoints } = game.state
+  const { count, restart } = useCountdown({ to: 0, from: 10, speed: 80 })
 
   useEffect(() => {
-    if (computerPoints > 0) {
-      restart()
-    }
+    if (computerPoints > 0) restart()
   }, [computerPoints, restart])
 
   return (
-    <Overlay zIndex={1}>
-      <img
-        alt="computer-takes"
-        src={computerTakeSrc}
-        style={{ opacity: count / 10 }}
-      />
-    </Overlay>
+    <Toast kind="warn" count={count}>
+      computer takes a set
+    </Toast>
   )
 }
 
 export const OverlayRefresh: React.FC<{ game: GameState }> = ({ game }) => {
-  const { count, restart } = useCountdown({
-    to: 0,
-    from: 10,
-    speed: 175,
-  })
-
   const { refreshCount } = game.state
+  const { count, restart } = useCountdown({ to: 0, from: 10, speed: 175 })
 
   useEffect(() => {
-    if (refreshCount > 0) {
-      restart()
-    }
+    if (refreshCount > 0) restart()
   }, [refreshCount, restart])
 
   return (
-    <Overlay zIndex={1}>
-      <div className="refresh-alert" style={{ opacity: count / 10 }}>
-        <img alt="reload" src={reloadSrc} />
-      </div>
-    </Overlay>
+    <Toast kind="info" count={count}>
+      no sets here — reshuffling
+    </Toast>
   )
 }
 
-export const OverlayGameOver: React.FC<{ game: GameState }> = ({ game }) => {
-  if (!game.state.isOver) {
-    return null
-  }
+export const OverlayGameOver: React.FC<{
+  game: GameState
+  onRestart: () => void
+}> = ({ game, onRestart }) => {
+  const { isOver, playerPoints, computerPoints } = game.state
+  if (!isOver) return null
 
-  const tieGame = game.state.playerPoints === game.state.computerPoints
-  const playerWins = game.state.playerPoints > game.state.computerPoints
-
-  const alt = tieGame ? "tie-game" : playerWins ? "you-win" : "you-lose"
-  const src = tieGame ? tieSrc : playerWins ? youWinSrc : youLoseSrc
-
-  const style = tieGame
-    ? {
-        borderColor: "darkblue",
-        backgroundColor: "lightblue",
-      }
-    : playerWins
-    ? {
-        borderColor: "darkgreen",
-        backgroundColor: "lightgreen",
-      }
-    : {
-        borderColor: "darkred",
-        backgroundColor: "pink",
-      }
+  const tie = playerPoints === computerPoints
+  const playerWins = playerPoints > computerPoints
+  const title = tie ? "tie game" : playerWins ? "you win!" : "you lose"
+  const kind = tie ? "tie" : playerWins ? "win" : "lose"
 
   return (
-    <Overlay zIndex={1}>
-      <div className="game-over-alert" style={{ ...style }}>
-        <img src={src} alt={alt} />
+    <div className="gameover-layer">
+      <div className={`gameover gameover-${kind}`}>
+        <div className="gameover-title">{title}</div>
+        <div className="gameover-score">
+          you {playerPoints} — {computerPoints} computer
+        </div>
+        <button className="btn btn-primary" onClick={onRestart}>
+          play again
+        </button>
       </div>
-    </Overlay>
+    </div>
   )
 }

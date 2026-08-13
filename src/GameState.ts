@@ -80,6 +80,8 @@ export class GameState extends VanillaState {
   private player: CardName[] = []
   private playerMiss = 0
   private playerPoints = 0
+  private playerSets: CardName[][] = []
+  private computerSets: CardName[][] = []
   private refreshCount = 0
 
   constructor(rerender: any) {
@@ -104,6 +106,8 @@ export class GameState extends VanillaState {
       player: this.player,
       playerMiss: this.playerMiss,
       playerPoints: this.playerPoints,
+      playerSets: this.playerSets,
+      computerSets: this.computerSets,
       refreshCount: this.refreshCount,
     } as const
   }
@@ -152,6 +156,7 @@ export class GameState extends VanillaState {
       if (this.player.length === 3) {
         if (isValidSet(this.player)) {
           this.playerPoints += 1
+          this.playerSets.push([...this.player])
           this.board = this.board
             .map((c) => (this.player.includes(c) ? this.deck.pop() : c))
             .filter(Boolean) as CardName[]
@@ -180,6 +185,7 @@ export class GameState extends VanillaState {
   @rerender
   computerTakeSet() {
     if (isValidSet(this.computer)) {
+      this.computerSets.push([...this.computer])
       this.board = this.board
         .map((c) => (this.computer.includes(c) ? this.deck.pop() : c))
         .filter(Boolean) as CardName[]

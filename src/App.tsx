@@ -51,6 +51,7 @@ const Card: React.FC<{
   return (
     <button
       className={className}
+      data-name={name}
       onClick={game.state.locked ? undefined : () => game.select(name)}
     >
       {[...Array(Number(num)).keys()].map((k) => (
@@ -80,7 +81,8 @@ const Board: React.FC<{
 
 const Scoreboard: React.FC<{
   game: GameState
-}> = ({ game }) => {
+  onShowSets: (who: "player" | "computer") => void
+}> = ({ game, onShowSets }) => {
   const { deck, playerPoints, computerPoints } = game.state
   return (
     <div className="scoreboard">
@@ -88,13 +90,75 @@ const Scoreboard: React.FC<{
         <span className="score-label">deck</span>
         <span className="score-value">{deck.length}</span>
       </div>
-      <div className="score-chip score-you">
+      <button
+        className="score-chip score-you"
+        title="see the sets you grabbed"
+        onClick={() => onShowSets("player")}
+      >
         <span className="score-label">you</span>
         <span className="score-value">{playerPoints}</span>
-      </div>
-      <div className="score-chip score-cpu">
+      </button>
+      <button
+        className="score-chip score-cpu"
+        title="see the sets the computer grabbed"
+        onClick={() => onShowSets("computer")}
+      >
         <span className="score-label">computer</span>
         <span className="score-value">{computerPoints}</span>
+      </button>
+    </div>
+  )
+}
+
+const MiniCard: React.FC<{ name: CardName }> = ({ name }) => {
+  const [color, shape, inner, num] = name.split("-") as [
+    Colors,
+    Shapes,
+    Inners,
+    string
+  ]
+  return (
+    <div className="mini-card">
+      {[...Array(Number(num)).keys()].map((k) => (
+        <CardSymbol key={k} color={color} shape={shape} inner={inner} />
+      ))}
+    </div>
+  )
+}
+
+const SetsModal: React.FC<{
+  who: "player" | "computer"
+  game: GameState
+  onClose: () => void
+}> = ({ who, game, onClose }) => {
+  const sets =
+    who === "player" ? game.state.playerSets : game.state.computerSets
+  const title = who === "player" ? "your sets" : "computer's sets"
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <span className="modal-title">
+            {title} <span className="modal-count">{sets.length}</span>
+          </span>
+          <button className="modal-close" onClick={onClose} aria-label="close">
+            ×
+          </button>
+        </div>
+        {sets.length === 0 ? (
+          <div className="modal-empty">no sets grabbed yet</div>
+        ) : (
+          <div className="modal-sets">
+            {sets.map((set, i) => (
+              <div key={i} className="set-row">
+                {set.map((c) => (
+                  <MiniCard key={c} name={c} />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -134,12 +198,22 @@ const Game: React.FC<{
   const { count } = useComputer(game, DIFFICULTY_MAP[difficulty])
   const restart = () => onChangeConfig({ ready: false, difficulty })
   const urgency = count <= 5 ? "danger" : count <= 10 ? "warning" : ""
+  const [setsModal, setSetsModal] = useState<"player" | "computer" | null>(
+    null
+  )
 
   return (
     <div className="game">
+      {setsModal && (
+        <SetsModal
+          who={setsModal}
+          game={game}
+          onClose={() => setSetsModal(null)}
+        />
+      )}
       <header className="topbar">
         <Logo />
-        <Scoreboard game={game} />
+        <Scoreboard game={game} onShowSets={setSetsModal} />
         <div className="topbar-right">
           <span className="difficulty-badge">{difficulty}</span>
           <button className="btn btn-quiet" onClick={restart}>
